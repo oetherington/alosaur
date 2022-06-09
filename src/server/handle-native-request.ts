@@ -67,7 +67,7 @@ async function handleFullServer<TState>(
 ) {
   const requests = Deno.serveHttp(conn);
   for await (const request of requests) {
-    const respondWith = respondWithWrapper(request.respondWith, conn);
+    request.respondWith = respondWithWrapper(request.respondWith, conn);
 
     metadata.container.register(SERVER_REQUEST, { useValue: request });
     const context = metadata.container.resolve<HttpContext<TState>>(
@@ -90,7 +90,7 @@ async function handleFullServer<TState>(
       }
 
       if (context.response.isImmediately()) {
-        respondWith(
+        request.respondWith(
           getResponse(context.response.getRaw() as ActionResult),
         );
         continue;
@@ -100,7 +100,7 @@ async function handleFullServer<TState>(
       if (
         app.staticConfig && await getStaticFile(context, app.staticConfig)
       ) {
-        respondWith(
+        request.respondWith(
           getResponse(context.response.getRaw() as ActionResult),
         );
         continue;
@@ -152,7 +152,7 @@ async function handleFullServer<TState>(
             }
 
             if (context.response.isImmediately()) {
-              respondWith(getResponse(context.response.getMergedResult()));
+              request.respondWith(getResponse(context.response.getMergedResult()));
               continue;
             }
 
@@ -170,7 +170,7 @@ async function handleFullServer<TState>(
       }
 
       if (context.response.isImmediately()) {
-        respondWith(getResponse(context.response.getMergedResult()));
+        request.respondWith(getResponse(context.response.getMergedResult()));
         continue;
       }
 
@@ -181,30 +181,30 @@ async function handleFullServer<TState>(
       }
 
       if (context.response.isImmediately()) {
-        respondWith(getResponse(context.response.getMergedResult()));
+        request.respondWith(getResponse(context.response.getMergedResult()));
         continue;
       }
 
       if (context.response.result === undefined) {
         context.response.result = notFoundAction();
 
-        respondWith(getResponse(context.response.getMergedResult()));
+        request.respondWith(getResponse(context.response.getMergedResult()));
         continue;
       }
 
-      respondWith(getResponse(context.response.getMergedResult()));
+      request.respondWith(getResponse(context.response.getMergedResult()));
     } catch (error) {
       if (app.globalErrorHandler) {
         app.globalErrorHandler(context, error);
 
         if (context.response.isImmediately()) {
-          respondWith(getResponse(context.response.getMergedResult()));
+          request.respondWith(getResponse(context.response.getMergedResult()));
           continue;
         }
       }
 
       if (context.response.isImmediately()) {
-        respondWith(getResponse(context.response.getMergedResult()));
+        request.respondWith(getResponse(context.response.getMergedResult()));
         continue;
       }
 
@@ -212,7 +212,7 @@ async function handleFullServer<TState>(
         console.error(error);
       }
 
-      respondWith(getResponse(Content(error, error.httpCode || 500)));
+      request.respondWith(getResponse(Content(error, error.httpCode || 500)));
     }
   }
 }
@@ -221,7 +221,7 @@ async function handleLiteServer<TState>(conn: Deno.Conn, app: App<TState>) {
   const requests = Deno.serveHttp(conn);
 
   for await (const request of requests) {
-    const respondWith = respondWithWrapper(request.respondWith, conn);
+    request.respondWith = respondWithWrapper(request.respondWith, conn);
 
     const context = new HttpContext(request);
 
@@ -230,7 +230,7 @@ async function handleLiteServer<TState>(conn: Deno.Conn, app: App<TState>) {
       if (
         app.staticConfig && await getStaticFile(context, app.staticConfig)
       ) {
-        respondWith(
+        request.respondWith(
           getResponse(context.response.getRaw() as ActionResult),
         );
         continue;
@@ -259,23 +259,23 @@ async function handleLiteServer<TState>(conn: Deno.Conn, app: App<TState>) {
       if (context.response.result === undefined) {
         context.response.result = notFoundAction();
 
-        respondWith(getResponse(context.response.getMergedResult()));
+        request.respondWith(getResponse(context.response.getMergedResult()));
         continue;
       }
 
-      respondWith(getResponse(context.response.getMergedResult()));
+      request.respondWith(getResponse(context.response.getMergedResult()));
     } catch (error) {
       if (app.globalErrorHandler) {
         app.globalErrorHandler(context, error);
 
         if (context.response.isImmediately()) {
-          respondWith(getResponse(context.response.getMergedResult()));
+          request.respondWith(getResponse(context.response.getMergedResult()));
           continue;
         }
       }
 
       if (context.response.isImmediately()) {
-        respondWith(getResponse(context.response.getMergedResult()));
+        request.respondWith(getResponse(context.response.getMergedResult()));
         continue;
       }
 
@@ -283,7 +283,7 @@ async function handleLiteServer<TState>(conn: Deno.Conn, app: App<TState>) {
         console.error(error);
       }
 
-      respondWith(getResponse(Content(error, error.httpCode || 500)));
+      request.respondWith(getResponse(Content(error, error.httpCode || 500)));
     }
   }
 }
